@@ -5,8 +5,8 @@ A simple webpage that shows capabilities of Duck DB in browser via WASM. Demo us
 ## Running Locally
 
 ```bash
-cd car-maintenance-wasm
-npx serve -l 3000
+# serve the src directory
+npx serve src -l 5000
 ```
 
 Open `http://localhost:3000`
