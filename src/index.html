@@ -13,15 +13,33 @@
         <div style="display: flex; width: 100%;">
             <h1>DuckDB WASM Demo</h1>
         </div>
-        <div style="display: flex; width: 100%;">
-            <button onclick="runQuery()">Run Query</button>
+
+        <div style="display: flex; width: 100%; margin-bottom: 1em;">
+            <p>This page shows off DuckDB running via WebAssembly (WASM) in the browser.</p>
         </div>
-        <div style="display: flex; width: 100%;">
-            <code id="output-init">Click button to run query...</code>
+        <div style="display: flex; width: 100%; margin-bottom: 1em;">
+            <code id="output-init" style="width: 100%; padding: 1rem;">DuckDB initialization updates go here...</code>
         </div>
-        <div style="display: flex; width: 100%;">
-            <code id="output">Query output goes here...</code>
+
+        <div id="output-container" style="display: none;">
+            <div id="output-01" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                    <div style="display: flex; width: 100%;">
+                        <h4>Query</h4>
+                    </div>
+                    <div style="display: flex; width: 100%;">
+                        <code style="width: 100%; padding: 1rem;">Query goes here...</code>
+                    </div>
+                    <div style="display: flex; width: 100%;">
+                        <h4>Results</h4>
+                    </div>
+                    <div style="display: flex; width: 100%;">
+                        <code style="width: 100%; padding: 1rem;">Results go here...</code>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </div>
 
     <script type="module" src="app.js"></script>

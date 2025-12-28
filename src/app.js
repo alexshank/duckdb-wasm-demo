@@ -7,9 +7,11 @@ async function initDB() {
     const output = document.getElementById('output-init');
     output.textContent = 'Initializing DuckDB...';
 
-    // Initialize DuckDB
+    // use WASM bundles from CDN to avoid bundling binary files
     const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
     const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+
+    // worker requires blob URL since we're loading from CDN
     const worker_url = URL.createObjectURL(
         new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
     );
@@ -21,14 +23,44 @@ async function initDB() {
 
     conn = await db.connect();
 
-    output.textContent = 'DuckDB initialized! Click "Run Query" to test.';
+    output.textContent = 'DuckDB initialized!';
+    document.getElementById('output-container').style.display = 'block';
 }
 
-async function runQuery() {
-    const output = document.getElementById('output');
+// convert DuckDB result to HTML table
+function resultToTable(result) {
+    const rows = result.toArray();
+
+    if (rows.length === 0) {
+        return '<p>No results.</p>';
+    }
+
+    const columns = Object.keys(rows[0]);
+
+    let html = '<table><thead><tr>';
+    columns.forEach(col => {
+        html += `<th>${col}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    rows.forEach(row => {
+        html += '<tr>';
+        columns.forEach(col => {
+            html += `<td>${row[col]}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
+}
+
+async function runQuery(outputId, query) {
+    const outputContainer = document.getElementById(outputId);
+    const codeElements = outputContainer.querySelectorAll('code');
 
     try {
-        // Create sample table
+        // populate sample data for demo
         await conn.query(`
             CREATE OR REPLACE TABLE users AS
             SELECT * FROM (VALUES
@@ -39,25 +71,24 @@ async function runQuery() {
             ) AS t(id, name, age)
         `);
 
-        // Run query
-        const result = await conn.query(`
-            SELECT * FROM users WHERE age > 27 ORDER BY age DESC
-        `);
+        const result = await conn.query(query);
 
-        // Format output
-        const rows = result.toArray();
-        let text = 'Query: SELECT * FROM users WHERE age > 27\n\n';
-        text += 'Results:\n';
-        text += JSON.stringify(rows, null, 2);
+        codeElements[0].textContent = query;
 
-        output.textContent = text;
+        // replace parent to remove <code> wrapper around table
+        const resultsContainer = codeElements[1].parentElement;
+        resultsContainer.innerHTML = resultToTable(result);
     } catch (error) {
-        output.textContent = `Error: ${error.message}`;
+        const resultsContainer = codeElements[1].parentElement;
+        resultsContainer.innerHTML = `<p>error: ${error.message}</p>`;
     }
 }
 
-// Initialize on page load
-initDB();
-
-// Export for use in HTML onclick
-window.runQuery = runQuery;
+// initialize and run query after DOM loads
+document.addEventListener('DOMContentLoaded', async () => {
+    await initDB();
+    runQuery(
+        'output-01',
+        'SELECT * FROM users WHERE age > 27 ORDER BY age DESC'
+    );
+});
