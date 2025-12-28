@@ -60,15 +60,15 @@ async function runQuery(outputId, query) {
     const codeElements = outputContainer.querySelectorAll('code');
 
     try {
-        // populate sample data for demo
+        // fetch CSV file and register in DuckDB's virtual filesystem
+        const response = await fetch('data/users.csv');
+        const csvData = await response.arrayBuffer();
+        await db.registerFileBuffer('users.csv', new Uint8Array(csvData));
+
+        // load CSV data into table
         await conn.query(`
             CREATE OR REPLACE TABLE users AS
-            SELECT * FROM (VALUES
-                (1, 'Alice', 30),
-                (2, 'Bob', 25),
-                (3, 'Charlie', 35),
-                (4, 'Diana', 28)
-            ) AS t(id, name, age)
+            SELECT * FROM read_csv_auto('users.csv')
         `);
 
         const result = await conn.query(query);
