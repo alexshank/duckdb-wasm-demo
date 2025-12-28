@@ -4,7 +4,7 @@ let db;
 let conn;
 
 async function initDB() {
-    const output = document.getElementById('output');
+    const output = document.getElementById('output-init');
     output.textContent = 'Initializing DuckDB...';
 
     // Initialize DuckDB
