@@ -15,13 +15,31 @@
         </div>
 
         <div style="display: flex; width: 100%; margin-bottom: 1em;">
-            <p>This page shows off DuckDB running via WebAssembly (WASM) in the browser.</p>
+            <p>This page shows off DuckDB running via WebAssembly (WASM) in the browser. A full SQL database engine
+                compiled from C++ to WASM runs entirely client-side with no server required. <b>Below you'll see it
+                    query
+                    an in-memory table in real-time with no additional server calls!</b></p>
         </div>
+
         <div style="display: flex; width: 100%; margin-bottom: 1em;">
             <code id="output-init" style="width: 100%; padding: 1rem;">DuckDB initialization updates go here...</code>
         </div>
+        <div style="display: flex; width: 100%; margin-bottom: 1em;">
+            <p>The WASM binary and worker scripts are fetched from a CDN on page load, then they initialize in a Web
+                Worker to keep the UI responsive. Sample data is created directly in memory using SQL, and queries
+                execute entirely in your browser's WASM runtime. <b>All of this happens without touching a backend
+                    server,
+                    but there are some startup time penalties.</b>
+            </p>
+        </div>
+
 
         <div id="output-container" style="display: none;">
+
+            <h2>Our Data</h2>
+            <p>
+                DuckDB is ready! Let's look at the table we've created.
+            </p>
             <div id="output-01" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
                     <div style="display: flex; width: 100%;">
@@ -38,8 +56,8 @@
                     </div>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>
