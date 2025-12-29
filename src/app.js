@@ -32,7 +32,7 @@ function resultToTable(result) {
     const rows = result.toArray();
 
     if (rows.length === 0) {
-        return '<p>No results.</p>';
+        return '<pre style="width: 100%; padding: 1rem; margin: 0;"><code>No results.</code></pre>';
     }
 
     const columns = Object.keys(rows[0]);
@@ -60,17 +60,6 @@ async function runQuery(outputId, query) {
     const codeElements = outputContainer.querySelectorAll('code');
 
     try {
-        // fetch CSV file and register in DuckDB's virtual filesystem
-        const response = await fetch('data/vehicle-log-sample.csv');
-        const csvData = await response.arrayBuffer();
-        await db.registerFileBuffer('vehicle-log-sample.csv', new Uint8Array(csvData));
-
-        // load CSV data into table
-        await conn.query(`
-            CREATE OR REPLACE TABLE vehicles AS
-            SELECT * FROM read_csv_auto('vehicle-log-sample.csv')
-        `);
-
         const result = await conn.query(query);
 
         codeElements[0].textContent = query;
@@ -80,7 +69,25 @@ async function runQuery(outputId, query) {
         resultsContainer.innerHTML = resultToTable(result);
     } catch (error) {
         const resultsContainer = codeElements[1].parentElement;
-        resultsContainer.innerHTML = `<p>error: ${error.message}</p>`;
+        resultsContainer.innerHTML = `<pre style="width: 100%; padding: 1rem; margin: 0;"><code>error: ${error.message}</code></pre>`;
+    }
+}
+
+async function runCreateTable(outputId, query) {
+    const outputContainer = document.getElementById(outputId);
+    const codeElements = outputContainer.querySelectorAll('code');
+
+    try {
+        await conn.query(query);
+
+        codeElements[0].textContent = query;
+
+        // show success message for CREATE TABLE statements
+        const resultsContainer = codeElements[1].parentElement;
+        resultsContainer.innerHTML = '<pre style="width: 100%; padding: 1rem; margin: 0;"><code>Table created successfully.</code></pre>';
+    } catch (error) {
+        const resultsContainer = codeElements[1].parentElement;
+        resultsContainer.innerHTML = `<pre style="width: 100%; padding: 1rem; margin: 0;"><code>error: ${error.message}</code></pre>`;
     }
 }
 
@@ -88,18 +95,31 @@ async function runQuery(outputId, query) {
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
 
-    // query 1: first 10 rows from dataset
-    runQuery(
-        'output-01',
-        `SELECT *
-FROM vehicles
-LIMIT 10`
+    // load CSV file and register in DuckDB's virtual filesystem
+    const response = await fetch('data/vehicle-log-sample.csv');
+    const csvData = await response.arrayBuffer();
+    await db.registerFileBuffer('vehicle-log-sample.csv', new Uint8Array(csvData));
+
+    // create base vehicles table from CSV
+    await runCreateTable(
+        'output-create-01',
+        `CREATE TABLE vehicles AS
+SELECT * FROM read_csv_auto('vehicle-log-sample.csv')`
     );
 
-    // query 2: fill up records for Vehicle_ID = 34
-    runQuery(
-        'output-02',
-        `SELECT
+    // preview loaded data
+    await runQuery(
+        'output-preview-01',
+        `SELECT *
+FROM vehicles
+LIMIT 5`
+    );
+
+    // create intermediate filtered_log table for Vehicle_ID = 34 fill-ups
+    await runCreateTable(
+        'output-create-02',
+        `CREATE TABLE filtered_log AS
+SELECT
     Log_ID,
     Vehicle_ID,
     Record_Type,
@@ -114,14 +134,22 @@ WHERE Vehicle_ID = 34
     AND Mileage IS NOT NULL
     AND Mileage != '-1.00'
     AND Is_Fill_Up = 'TRUE'
-ORDER BY Log_Date ASC
-LIMIT 10`
+ORDER BY Log_Date ASC`
+    );
+"fill-up"
+    // preview filtered data
+    await runQuery(
+        'output-preview-02',
+        `SELECT *
+FROM filtered_log
+LIMIT 5`
     );
 
-    // query 3: fill-up differences using window functions
-    runQuery(
-        'output-03',
-        `SELECT
+    // create intermediate fillup_differences table with window functions
+    await runCreateTable(
+        'output-create-03',
+        `CREATE TABLE fillup_differences AS
+SELECT
     Log_Date,
     Mileage,
     LAG(Log_Date) OVER (ORDER BY Log_Date) AS prev_date,
@@ -129,71 +157,41 @@ LIMIT 10`
     DATEDIFF('day', LAG(Log_Date) OVER (ORDER BY Log_Date), Log_Date) AS days_between,
     TRY_CAST(REPLACE(Mileage, ',', '') AS DOUBLE) -
         TRY_CAST(REPLACE(LAG(Mileage) OVER (ORDER BY Log_Date), ',', '') AS DOUBLE) AS mileage_difference
-FROM vehicles
-WHERE Vehicle_ID = 34
-    AND Record_Type = '1'
-    AND Mileage IS NOT NULL
-    AND Mileage != '-1.00'
-    AND Is_Fill_Up = 'TRUE'
-ORDER BY Log_Date ASC
-LIMIT 10`
+FROM filtered_log
+ORDER BY Log_Date ASC`
     );
 
-    // query 4: average fill-up statistics
+    // preview fill-up differences
+    await runQuery(
+        'output-preview-03',
+        `SELECT *
+FROM fillup_differences
+LIMIT 5`
+    );
+
+    // query 4: average fill-up statistics (from intermediate table)
     runQuery(
         'output-04',
-        `WITH fillup_data AS (
-    SELECT
-        Log_Date,
-        Mileage,
-        LAG(Log_Date) OVER (ORDER BY Log_Date) AS prev_date,
-        LAG(Mileage) OVER (ORDER BY Log_Date) AS prev_mileage,
-        DATEDIFF('day', LAG(Log_Date) OVER (ORDER BY Log_Date), Log_Date) AS days_between,
-        TRY_CAST(REPLACE(Mileage, ',', '') AS DOUBLE) -
-            TRY_CAST(REPLACE(LAG(Mileage) OVER (ORDER BY Log_Date), ',', '') AS DOUBLE) AS mileage_difference
-    FROM vehicles
-    WHERE Vehicle_ID = 34
-        AND Record_Type = '1'
-        AND Mileage IS NOT NULL
-        AND Mileage != '-1.00'
-        AND Is_Fill_Up = 'TRUE'
-)
-SELECT
+        `SELECT
     AVG(days_between) AS avg_days_between_fillups,
     AVG(mileage_difference) AS avg_mileage_between_fillups
-FROM fillup_data
+FROM fillup_differences
 WHERE days_between IS NOT NULL
     AND mileage_difference IS NOT NULL`
     );
 
-    // query 5: yearly fill-up statistics
+    // query 5: yearly fill-up statistics (from intermediate table)
     runQuery(
         'output-05',
-        `WITH fillup_data AS (
-    SELECT
-        Log_Date,
-        Mileage,
-        LAG(Log_Date) OVER (ORDER BY Log_Date) AS prev_date,
-        LAG(Mileage) OVER (ORDER BY Log_Date) AS prev_mileage,
-        DATEDIFF('day', LAG(Log_Date) OVER (ORDER BY Log_Date), Log_Date) AS days_between,
-        TRY_CAST(REPLACE(Mileage, ',', '') AS DOUBLE) -
-            TRY_CAST(REPLACE(LAG(Mileage) OVER (ORDER BY Log_Date), ',', '') AS DOUBLE) AS mileage_difference
-    FROM vehicles
-    WHERE Vehicle_ID = 34
-        AND Record_Type = '1'
-        AND Mileage IS NOT NULL
-        AND Mileage != '-1.00'
-        AND Is_Fill_Up = 'TRUE'
-)
-SELECT
+        `SELECT
     YEAR(Log_Date) AS year,
     AVG(days_between) AS avg_days_between_fillups,
     AVG(mileage_difference) AS avg_mileage_between_fillups
-FROM fillup_data
+FROM fillup_differences
 WHERE days_between IS NOT NULL
     AND mileage_difference IS NOT NULL
 GROUP BY YEAR(Log_Date)
 ORDER BY year
-LIMIT 10`
+LIMIT 5`
     );
 });
