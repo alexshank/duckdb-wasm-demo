@@ -39,7 +39,8 @@
 
             <h2>Our Data</h2>
             <p>
-                Initial data is loaded from a CSV file. This contains expense records for different vehicles. We are
+                Initial data is loaded from a CSV file. This data contains expense records for different vehicles. We
+                are
                 interested in gas costs, and how often we need to fill up the vehicle's tank. There are "fill-up"
                 records that indicate when a full tank of gas was purchased. We'll use these records to calculate
                 average
@@ -63,9 +64,8 @@
                 </div>
             </div>
 
-            <h2>Preview Loaded Data</h2>
             <p>
-                This shows the first 5 rows from the newly created vehicles table.
+                We can view the important columns and get a feel for the data.
             </p>
             <div id="output-preview-01" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -84,9 +84,8 @@
                 </div>
             </div>
 
-            <h2>Create Filtered Table</h2>
             <p>
-                This creates an intermediate table with only Vehicle ID 34 fill-up records for analysis.
+                We care about a single vehicle, and only its gas fill-up records.
             </p>
             <div id="output-create-02" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -105,9 +104,8 @@
                 </div>
             </div>
 
-            <h2>Preview Filtered Data</h2>
             <p>
-                This shows the first 5 rows from the filtered_log table.
+                We can now see just the fill-up records for our vehicle.
             </p>
             <div id="output-preview-02" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -126,10 +124,11 @@
                 </div>
             </div>
 
-            <h2>Create Fill-Up Differences Table</h2>
+            <h2>Average Fill-Up Statistics</h2>
             <p>
-                This creates an intermediate table with calculated differences between consecutive fill-ups using window
-                functions.
+                We can create an intermediate table containing mileage differences via a window function. Note that a
+                Common Table Expression
+                (CTE) could be used to avoid creating a physical table.
             </p>
             <div id="output-create-03" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -148,9 +147,8 @@
                 </div>
             </div>
 
-            <h2>Preview Fill-Up Differences</h2>
             <p>
-                This shows the first 5 rows from the fillup_differences table.
+                We now have access to the mileage and day differences between fill-ups.
             </p>
             <div id="output-preview-03" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -169,9 +167,8 @@
                 </div>
             </div>
 
-            <h2>Average Fill-Up Statistics</h2>
             <p>
-                This aggregates the fill-up data to show overall average days and mileage between fill-ups.
+                We can find the average mileage and days between fill-ups using an aggregate.
             </p>
             <div id="output-04" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">
@@ -192,7 +189,7 @@
 
             <h2>Yearly Fill-Up Statistics</h2>
             <p>
-                This groups fill-up statistics by year to reveal trends over time.
+                We can go one step further and aggregate fill-up statistics by year to reveal trends over time.
             </p>
             <div id="output-05" style="display: flex; width: 100%; margin-bottom: 1em; padding: 0.5rem;">
                 <div style="display: flex; flex-direction: column; width: 100%;">

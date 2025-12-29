@@ -131,8 +131,6 @@ SELECT
 FROM vehicles
 WHERE Vehicle_ID = 34
     AND Record_Type = '1'
-    AND Mileage IS NOT NULL
-    AND Mileage != '-1.00'
     AND Is_Fill_Up = 'TRUE'
 ORDER BY Log_Date ASC`
     );
