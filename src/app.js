@@ -27,6 +27,55 @@ async function initDB() {
     document.getElementById('output-container').style.display = 'block';
 }
 
+// format cell value based on column name and data type
+function formatCellValue(value, columnName) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    const lowerCol = columnName.toLowerCase();
+
+    // format dates
+    if (lowerCol.includes('date')) {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString();
+        }
+        return value;
+    }
+
+    // strip commas from string values before number conversion
+    const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value;
+
+    // format mileage as integer
+    if (lowerCol.includes('mileage')) {
+        const numValue = Number(cleanValue);
+        if (isNaN(numValue)) {
+            return '';
+        }
+        return Math.round(numValue).toLocaleString();
+    }
+
+    // format days_between as integer
+    if (lowerCol.includes('days')) {
+        const numValue = Number(cleanValue);
+        if (isNaN(numValue)) {
+            return '';
+        }
+        return Math.round(numValue).toLocaleString();
+    }
+
+    // format other numbers to 2 decimal places
+    if (typeof value === 'number') {
+        if (isNaN(value)) {
+            return '';
+        }
+        return value.toFixed(2);
+    }
+
+    return value;
+}
+
 // convert DuckDB result to HTML table
 function resultToTable(result) {
     const rows = result.toArray();
@@ -46,7 +95,7 @@ function resultToTable(result) {
     rows.forEach(row => {
         html += '<tr>';
         columns.forEach(col => {
-            html += `<td>${row[col]}</td>`;
+            html += `<td>${formatCellValue(row[col], col)}</td>`;
         });
         html += '</tr>';
     });
