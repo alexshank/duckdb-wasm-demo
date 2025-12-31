@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DuckDB WASM Demo</title>
+    <link rel="icon" type="image/svg+xml" href="/public/duck.svg" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+    />
+  </head>
+
+  <body>
+    <div style="display: flex; flex-direction: column">
+      <div style="display: flex; width: 100%">
+        <h1>DuckDB WASM Demo</h1>
+      </div>
+
+      <blockquote style="margin-bottom: 1em">
+        <p>
+          Created by <mark>Alexander Shank</mark>, a Chicago-based software
+          engineer. Learn more at his personal blog,
+          <a href="https://alexandershank.com" target="_blank"
+            >alexandershank.com</a
+          >.
+        </p>
+      </blockquote>
+
+      <div style="display: flex; width: 100%; margin-bottom: 1em">
+        <p>
+          This page shows off DuckDB running via WebAssembly (WASM) in the
+          browser. A full SQL database engine compiled from C++ to WASM runs
+          entirely client-side with no server required.
+          <b
+            >Below you'll see it query an in-memory table in real-time with no
+            additional server calls!</b
+          >
+        </p>
+      </div>
+
+      <div style="display: flex; width: 100%; margin-bottom: 1em">
+        <code id="output-init" style="width: 100%; padding: 1rem"
+          >DuckDB initialization updates go here...</code
+        >
+      </div>
+      <div style="display: flex; width: 100%; margin-bottom: 1em">
+        <p>
+          The WASM binary and worker scripts are fetched from a CDN on page
+          load. A Web Worker is started to keep the UI responsive. A CSV file
+          with sample data is loaded as a table object, and queries execute
+          against this table entirely in your browser's WASM runtime.
+          <b
+            >All of this happens without touching a backend server, but there
+            are startup time penalties.</b
+          >
+        </p>
+      </div>
+
+      <div id="output-container" style="display: none">
+        <h2>Our Data</h2>
+        <p>
+          Initial data is loaded from a CSV file. This data contains expense
+          records for different vehicles. We are interested in gas costs, and
+          how often we need to fill up the vehicle's tank. There are "fill-up"
+          records that indicate when a full tank of gas was purchased. We'll use
+          these records to calculate average time and mileage between fill-ups.
+        </p>
+        <p>
+          The important things here is that
+          <code>vehicle-log-sample.csv</code> is only <code>~11 KB</code> in
+          size. Deploying database infra for this would be wasteful and complex.
+          We could handle datasets that are several MB in size comfortably, and
+          give users the liberty to run arbitrary SQL queries.
+        </p>
+        <div
+          id="output-create-01"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <p>We can view the important columns and get a feel for the data.</p>
+        <div
+          id="output-preview-01"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <p>We care about a single vehicle, and only its gas fill-up records.</p>
+        <div
+          id="output-create-02"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <p>We can now see just the fill-up records for our vehicle.</p>
+        <div
+          id="output-preview-02"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <h2>Average Fill-Up Statistics</h2>
+        <p>
+          We can create an intermediate table containing mileage differences via
+          a window function. Note that a Common Table Expression (CTE) could be
+          used to avoid creating a physical table.
+        </p>
+        <div
+          id="output-create-03"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <p>
+          We now have access to the mileage and day differences between
+          fill-ups.
+        </p>
+        <div
+          id="output-preview-03"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <p>
+          We can find the average mileage and days between fill-ups using an
+          aggregate.
+        </p>
+        <div
+          id="output-04"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <h2>Yearly Fill-Up Statistics</h2>
+        <p>
+          We can go one step further and aggregate fill-up statistics by year to
+          reveal trends over time.
+        </p>
+        <div
+          id="output-05"
+          style="
+            display: flex;
+            width: 100%;
+            margin-bottom: 1em;
+            padding: 0.5rem;
+          "
+        >
+          <div style="display: flex; flex-direction: column; width: 100%">
+            <div style="display: flex; width: 100%">
+              <h4 style="margin-top: 0">Query</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <pre
+                style="width: 100%; padding: 1rem; margin: 0"
+              ><code>Query goes here...</code></pre>
+            </div>
+            <div style="display: flex; width: 100%">
+              <h4>Results</h4>
+            </div>
+            <div style="display: flex; width: 100%">
+              <code style="width: 100%; padding: 1rem">Results go here...</code>
+            </div>
+          </div>
+        </div>
+
+        <h2>Conclusion</h2>
+        <p style="margin-bottom: 6rem">
+          That's it! A really useful pattern to share data directly with clients
+          without server infrastructure. This entire demo is an HTML file, a
+          JavaScript file, and a CSV file. A surprising amount of data analysis
+          is performed on small datasets, which this pattern is well-suited for.
+        </p>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
