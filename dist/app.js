@@ -37,6 +37,11 @@ function formatCellValue(value, columnName) {
 
   const lowerCol = columnName.toLowerCase();
 
+  // format Date objects (e.g. from date_trunc) regardless of column name
+  if (value instanceof Date) {
+    return value.toLocaleDateString();
+  }
+
   // format dates
   if (lowerCol.includes("date")) {
     const date = new Date(value);
@@ -84,12 +89,12 @@ function resultToTable(result) {
   const rows = result.toArray();
 
   if (rows.length === 0) {
-    return '<pre style="width: 100%; padding: 1rem; margin: 0;"><code>No results.</code></pre>';
+    return '<pre class="qr-msg"><code>No results.</code></pre>';
   }
 
   const columns = Object.keys(rows[0]);
 
-  let html = "<table><thead><tr>";
+  let html = '<div class="table-scroll"><table><thead><tr>';
   columns.forEach((col) => {
     html += `<th>${col}</th>`;
   });
@@ -103,7 +108,7 @@ function resultToTable(result) {
     html += "</tr>";
   });
 
-  html += "</tbody></table>";
+  html += "</tbody></table></div>";
   return html;
 }
 
@@ -121,7 +126,7 @@ async function runQuery(outputId, query) {
     resultsContainer.innerHTML = resultToTable(result);
   } catch (error) {
     const resultsContainer = codeElements[1].parentElement;
-    resultsContainer.innerHTML = `<pre style="width: 100%; padding: 1rem; margin: 0;"><code>error: ${error.message}</code></pre>`;
+    resultsContainer.innerHTML = `<pre class="qr-msg"><code>error: ${error.message}</code></pre>`;
   }
 }
 
@@ -137,11 +142,139 @@ async function runCreateTable(outputId, query) {
     // show success message for CREATE TABLE statements
     const resultsContainer = codeElements[1].parentElement;
     resultsContainer.innerHTML =
-      '<pre style="width: 100%; padding: 1rem; margin: 0;"><code>Table created successfully.</code></pre>';
+      '<pre class="qr-msg"><code>Table created successfully.</code></pre>';
   } catch (error) {
     const resultsContainer = codeElements[1].parentElement;
-    resultsContainer.innerHTML = `<pre style="width: 100%; padding: 1rem; margin: 0;"><code>error: ${error.message}</code></pre>`;
+    resultsContainer.innerHTML = `<pre class="qr-msg"><code>error: ${error.message}</code></pre>`;
   }
+}
+
+// sample queries offered to the user in the interactive section.
+// the first group inspects database metadata; the rest analyze the data.
+const SAMPLE_QUERIES = [
+  {
+    label: "List tables",
+    sql: `SHOW TABLES;`,
+  },
+  {
+    label: "Describe vehicles",
+    sql: `DESCRIBE vehicles;`,
+  },
+  {
+    label: "All columns",
+    sql: `SELECT
+    table_name,
+    column_name,
+    data_type
+FROM information_schema.columns
+ORDER BY table_name, ordinal_position;`,
+  },
+  {
+    label: "DuckDB version",
+    sql: `PRAGMA version;`,
+  },
+  {
+    label: "DuckDB settings",
+    sql: `SELECT name, value, description
+FROM duckdb_settings()
+ORDER BY name
+LIMIT 25;`,
+  },
+  {
+    label: "Records per vehicle",
+    sql: `SELECT
+    Vehicle_ID,
+    COUNT(*) AS record_count,
+    COUNT(*) FILTER (WHERE Is_Fill_Up = 'TRUE') AS fill_ups
+FROM vehicles
+GROUP BY Vehicle_ID
+ORDER BY record_count DESC;`,
+  },
+  {
+    label: "Top providers by spend",
+    sql: `SELECT
+    Provider,
+    COUNT(*) AS visits,
+    SUM(TRY_CAST(REPLACE(Cost, '$', '') AS DOUBLE)) AS total_spent
+FROM vehicles
+WHERE Is_Fill_Up = 'TRUE'
+GROUP BY Provider
+ORDER BY total_spent DESC
+LIMIT 10;`,
+  },
+  {
+    label: "Monthly spend (Vehicle 34)",
+    sql: `SELECT
+    strftime(Log_Date, '%Y-%m') AS month,
+    COUNT(*) AS fill_ups,
+    SUM(TRY_CAST(REPLACE(Cost, '$', '') AS DOUBLE)) AS monthly_spend
+FROM vehicles
+WHERE Vehicle_ID = 34
+    AND Is_Fill_Up = 'TRUE'
+GROUP BY month
+ORDER BY month
+LIMIT 12;`,
+  },
+  {
+    label: "Most expensive fill-ups",
+    sql: `SELECT
+    Log_Date,
+    Vehicle_ID,
+    Provider,
+    Cost
+FROM vehicles
+WHERE Is_Fill_Up = 'TRUE'
+ORDER BY TRY_CAST(REPLACE(Cost, '$', '') AS DOUBLE) DESC
+LIMIT 10;`,
+  },
+];
+
+// run an arbitrary user-supplied query and render the result table
+async function runUserQuery() {
+  const textarea = document.getElementById("user-query");
+  const resultsContainer = document.getElementById("user-query-results");
+  const query = textarea.value.trim();
+
+  if (!query) {
+    resultsContainer.innerHTML =
+      '<pre class="qr-msg"><code>Enter a query to run.</code></pre>';
+    return;
+  }
+
+  try {
+    const result = await conn.query(query);
+    const rows = result.toArray();
+
+    if (rows.length === 0) {
+      resultsContainer.innerHTML =
+        '<pre class="qr-msg"><code>Query executed successfully (no rows returned).</code></pre>';
+      return;
+    }
+
+    resultsContainer.innerHTML = resultToTable(result);
+  } catch (error) {
+    resultsContainer.innerHTML = `<pre class="qr-msg"><code>error: ${error.message}</code></pre>`;
+  }
+}
+
+// render the sample query buttons and wire up the interactive runner
+function initUserQuerySection() {
+  const sampleContainer = document.getElementById("sample-queries");
+
+  SAMPLE_QUERIES.forEach(({ label, sql }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sample-btn";
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      document.getElementById("user-query").value = sql;
+    });
+    sampleContainer.appendChild(button);
+  });
+
+  document
+    .getElementById("run-query-btn")
+    .addEventListener("click", runUserQuery);
 }
 
 // initialize and run queries after DOM loads
@@ -248,4 +381,7 @@ GROUP BY YEAR(Log_Date)
 ORDER BY year
 LIMIT 5`
   );
+
+  // wire up the interactive "Try It Yourself" query section
+  initUserQuerySection();
 });

@@ -9,6 +9,131 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
     />
+    <style>
+      /* groups a Query + Results pair behind a single subtle outline */
+      .qr-block {
+        width: 100%;
+        margin-bottom: 1.5em;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      /* small section label for "Query" / "Results" */
+      .qr-label {
+        margin: 0;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        background: var(--background-alt);
+      }
+
+      /* any label that isn't the first child separates the pair */
+      .qr-block .qr-label:not(:first-child) {
+        border-top: 1px solid var(--border);
+      }
+
+      /* shared code-block look for the query and for plain-text results
+         (e.g. "Table created!") so they have identical padding/margin */
+      .qr-block .qr-query,
+      .qr-block .qr-msg {
+        margin: 0;
+        padding: 0.75rem;
+        border: 0;
+        border-radius: 0;
+        background: var(--background);
+      }
+
+      /* results area has no padding of its own so text results match the
+         query exactly; when it holds a table we frame the scroll viewport
+         from the outside. Padding the scroll container itself would get
+         dropped by browsers at the scroll end, clipping the last column. */
+      .qr-results {
+        padding: 0;
+      }
+      .qr-results:has(.table-scroll) {
+        padding: 0.75rem;
+      }
+      /* the table lives in its own scroll container so it scrolls
+         horizontally the moment it is wider than the block, instead of
+         squashing columns or pushing the page wide */
+      .table-scroll {
+        width: 100%;
+        overflow-x: auto;
+      }
+      .qr-results table {
+        margin: 0;
+        /* override water.css's fixed/100% table so columns size to content
+           and the table can grow wider than the container to scroll */
+        table-layout: auto;
+        width: auto;
+        min-width: 100%;
+      }
+      .qr-results th,
+      .qr-results td {
+        white-space: nowrap;
+      }
+
+      /* sample query buttons: subtle, secondary chips */
+      .sample-queries {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+        margin-bottom: 1em;
+      }
+      .sample-btn {
+        margin: 0;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.85rem;
+        background: transparent;
+        color: var(--text-main);
+        border: 1px solid var(--border);
+      }
+      .sample-btn:hover {
+        background: var(--background-alt);
+      }
+
+      /* interactive editor inside a qr-block */
+      #user-query {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        font-family: monospace;
+        border: 0;
+        border-radius: 0;
+        resize: vertical;
+        background: var(--background);
+      }
+      /* label row that also holds the run button, floated to the right */
+      .qr-label-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+      }
+      /* the run button stands out from the secondary sample chips */
+      .run-btn {
+        margin: 0;
+        padding: 0.25rem 1rem;
+        font-weight: bold;
+        font-size: 0.85rem;
+        text-transform: none;
+        letter-spacing: normal;
+        background: var(--links);
+        color: var(--background-body);
+        border: 0;
+      }
+      /* keep hover the same accent, just slightly brighter (water.css would
+         otherwise swap in its dark --button-hover background) */
+      .run-btn:hover {
+        background: var(--links);
+        filter: brightness(1.15);
+      }
+    </style>
     <script
       defer
       src="https://analytics.alexandershank.com/script.js"
@@ -78,115 +203,35 @@
           We could handle datasets that are several MB in size comfortably, and
           give users the liberty to run arbitrary SQL queries.
         </p>
-        <div
-          id="output-create-01"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-create-01" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <p>We can view the important columns and get a feel for the data.</p>
-        <div
-          id="output-preview-01"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-preview-01" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <p>We care about a single vehicle, and only its gas fill-up records.</p>
-        <div
-          id="output-create-02"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-create-02" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <p>We can now see just the fill-up records for our vehicle.</p>
-        <div
-          id="output-preview-02"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-preview-02" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <h2>Average Fill-Up Statistics</h2>
@@ -195,93 +240,33 @@
           a window function. Note that a Common Table Expression (CTE) could be
           used to avoid creating a physical table.
         </p>
-        <div
-          id="output-create-03"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-create-03" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <p>
           We now have access to the mileage and day differences between
           fill-ups.
         </p>
-        <div
-          id="output-preview-03"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-preview-03" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <p>
           We can find the average mileage and days between fill-ups using an
           aggregate.
         </p>
-        <div
-          id="output-04"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
-          </div>
+        <div id="output-04" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
         </div>
 
         <h2>Yearly Fill-Up Statistics</h2>
@@ -289,30 +274,36 @@
           We can go one step further and aggregate fill-up statistics by year to
           reveal trends over time.
         </p>
-        <div
-          id="output-05"
-          style="
-            display: flex;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.5rem;
-          "
-        >
-          <div style="display: flex; flex-direction: column; width: 100%">
-            <div style="display: flex; width: 100%">
-              <h4 style="margin-top: 0">Query</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <pre
-                style="width: 100%; padding: 1rem; margin: 0"
-              ><code>Query goes here...</code></pre>
-            </div>
-            <div style="display: flex; width: 100%">
-              <h4>Results</h4>
-            </div>
-            <div style="display: flex; width: 100%">
-              <code style="width: 100%; padding: 1rem">Results go here...</code>
-            </div>
+        <div id="output-05" class="qr-block">
+          <p class="qr-label">Query</p>
+          <pre class="qr-query"><code>Query goes here...</code></pre>
+          <p class="qr-label">Results</p>
+          <div class="qr-results"><code>Results go here...</code></div>
+        </div>
+
+        <h2>Run Custom Queries</h2>
+        <p>
+          Everything above ran automatically, but the database is still live in
+          your browser. Write your own SQL below and run it against the
+          in-memory tables (<code>vehicles</code>, <code>filtered_log</code>, and
+          <code>fillup_differences</code>). Nothing leaves your machine.
+        </p>
+
+        <div id="sample-queries" class="sample-queries"></div>
+
+        <div class="qr-block">
+          <div class="qr-label qr-label-bar">
+            <span>Query</span>
+            <button id="run-query-btn" class="run-btn" type="button">
+              Run query
+            </button>
+          </div>
+          <textarea id="user-query" spellcheck="false" rows="8">
+SHOW TABLES;</textarea
+          >
+          <p class="qr-label">Results</p>
+          <div id="user-query-results" class="qr-results">
+            <pre class="qr-msg"><code>Results will appear here after you run a query.</code></pre>
           </div>
         </div>
 
