@@ -37,16 +37,19 @@ function formatCellValue(value, columnName) {
 
   const lowerCol = columnName.toLowerCase();
 
+  // duckdb returns dates as UTC midnight, so format in UTC or US time zones
+  // show the previous day
+
   // format Date objects (e.g. from date_trunc) regardless of column name
   if (value instanceof Date) {
-    return value.toLocaleDateString();
+    return value.toLocaleDateString(undefined, { timeZone: "UTC" });
   }
 
   // format dates
   if (lowerCol.includes("date")) {
     const date = new Date(value);
     if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString();
+      return date.toLocaleDateString(undefined, { timeZone: "UTC" });
     }
     return value;
   }
