@@ -1,4 +1,5 @@
-import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@latest/+esm";
+// pinned because @latest on npm points at a dev build and could change the engine with no deploy
+import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm";
 
 let db;
 let conn;
